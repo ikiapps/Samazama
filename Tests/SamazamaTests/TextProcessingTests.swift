@@ -28,12 +28,26 @@ struct DigraphTestSource
     var expected: String
 }
 
+/// Only keep coded characters.
+struct KeepCodedSource
+{
+    var word: String
+    var expected: String
+}
+
 private
 var digraphSource = [
-    DigraphTestSource(word: "night", expected: "nit"),
-    DigraphTestSource(word: "ghost", expected: "ghost"),
     DigraphTestSource(word: "dining hall", expected: "dining hall"),
     DigraphTestSource(word: "dininghall", expected: "dininall"),
+    DigraphTestSource(word: "ghost", expected: "ghost"),
+    DigraphTestSource(word: "night", expected: "nit"),
+]
+
+private
+var keepCodedSource = [
+    KeepCodedSource(word: "dining hall", expected: "dnngll"),
+    KeepCodedSource(word: "kun'yomi", expected: "knm"),
+    KeepCodedSource(word: "neighborhood", expected: "nbrd"),
 ]
 
 final
@@ -56,8 +70,16 @@ class TextProcessingTests: XCTestCase
     func test_remove_digraph()
     {
         for source in digraphSource {
-            let newSource = smzm.removeDigraphs(input: source.word)
-            XCTAssert(newSource == source.expected, "❌ Result \(newSource ) is not \(source.expected)")
+            let newSource = smzm.keepCoded(input: source.word, perform: [.removeDigraph])
+            XCTAssert(newSource.nonzeroCoded == source.expected, "❌ Result \(newSource.nonzeroCoded as String?) is not \(source.expected)")
         }
     }
+    
+    func test_keep_coded()
+    {
+        for source in keepCodedSource {
+            let newSource = smzm.keepCoded(input: source.word)
+            XCTAssert(newSource.nonzeroCoded == source.expected, "❌ Result \(newSource ) is not \(source.expected)")
+        }
+    }    
 }

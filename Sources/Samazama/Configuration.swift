@@ -20,11 +20,11 @@
 
 import Foundation
 
-public var maxRecursionLevel = 7
+public var maxRecursionLevel = 8
 public var qos: DispatchQoS.QoSClass = .utility
 public var shouldChangeToLowercase = true
 public var shouldNormalizeInput = true
 public var soundexCodeLength = 4
 
-var noncode = "0"
+var zerocode = "0"
 var removeCode = "-1"

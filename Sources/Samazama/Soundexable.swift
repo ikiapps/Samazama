@@ -20,12 +20,17 @@
 
 /// A variation of the Soundex algorithm for coding English words based on their sounds.
 /// It has been extended to ignore some digraphs.
+///
+/// The algorithm is implemented in two parts
+///
+/// 1. Store the first and nonzero coded characters in a SoundexCodeReady.
+/// 2. With a SoundexCodeReady, generate a Soundex code.
 
 public
 protocol Soundexable
 {
     func soundexEqual(_ first: String, _ second: String) -> Bool
-    func encodeString(input: String) -> String
+    func soundexCode(source: SoundexCodeReady) -> String
 }
 
 extension Soundexable
@@ -78,49 +83,54 @@ extension Soundexable
     }
     
     public
-    func soundexEqual(_ first: String,
-                      _ second: String) -> Bool
+    func soundexEqual(
+        _ lhs: String,
+        _ rhs: String) -> Bool
     {
-        encodeString(input: first) == encodeString(input: second)
+        soundexCode(source: keepCoded(input: lhs)) == soundexCode(source: keepCoded(input: rhs))
     }
     
-    /// Soundex encode a string. Noncodable characters get discarded.
-    /// 
-    /// - parameter input: String for encoding.
-    /// - returns: A Soundex code with the first letter followed three coding group numbers.
-    public
-    func encodeString(input: String) -> String
+    func emptySoundex() -> String
     {
-        guard input.count > 0 else {
-            return noncode
-                .padding(toLength: soundexCodeLength, withPad: noncode, startingAt: 0)
+        zerocode.padding(toLength: soundexCodeLength, withPad: zerocode, startingAt: 0)
+    }
+
+    /// Soundex encode a string. Nonzero coded characters get discarded.
+    ///
+    /// - parameter input: String for encoding.
+    /// - returns: A Soundex code with the first letter followed by three coding group numbers.
+    public
+    func soundexCode(source: SoundexCodeReady) -> String
+    {
+        guard let first = source.first,
+              let nonzeroCoded = source.nonzeroCoded,
+              nonzeroCoded.count > 0 else { return emptySoundex() }
+
+        var input = String(first)
+        
+        if nonzeroCoded[nonzeroCoded.index(nonzeroCoded.startIndex, offsetBy: 0)] == first {
+            input += nonzeroCoded[nonzeroCoded.index(nonzeroCoded.startIndex, offsetBy: 1)..<nonzeroCoded.endIndex]
+        } else {
+            input += nonzeroCoded
         }
+        
+        guard input.count > 0 else { return emptySoundex() }
+        
         let char = input[input.index(input.startIndex, offsetBy: 0)]
         var lastSubcode = getSubcode(char: char)
-        // Code starts with first character:
-        var code = String(char)
+        // Overall code starts with first character:
+        var code = String(first)
         let lastOffset = input.count - 1
         // Numeric subcodes start with the second character:
         var offset = 1
         var chars = ""
 
         while offset <= lastOffset {
-            // Digraph handling:
-            var doubleSubcode = noncode
-            if let digraphSubcode = lastSubcode {
-                (doubleSubcode, offset) = handleDigraph(input: input,
-                                                        lastSubcode: digraphSubcode,
-                                                        position: offset)
-            }
-            if doubleSubcode != lastSubcode && doubleSubcode != noncode && doubleSubcode != removeCode {
-                code += doubleSubcode
-            }
-            
             // Single handling:
             if offset <= lastOffset {
                 let char = input[input.index(input.startIndex, offsetBy: offset)]
                 if let singleSubcode = getSubcode(char: char) {
-                    if lastSubcode != singleSubcode && singleSubcode != noncode {
+                    if lastSubcode != singleSubcode && singleSubcode != zerocode {
                         if code.count < soundexCodeLength {
                             chars += String(char)
                             code += singleSubcode
@@ -133,25 +143,77 @@ extension Soundexable
         }
         
         return code
-            .padding(toLength: soundexCodeLength, withPad: noncode, startingAt: 0)
-    }
-
-    /// Change previous subcode and string pointer based on digraph handling rules.
-    /// * Subcode and position do not change if a digraph is not processed.
-    /// * Changes happen when a digraph is matched:
-    ///   - The subcode changes from the last subcode if a digraph is matched.
-    ///   - The position advances so the digraph is not processed again.
+            .padding(toLength: soundexCodeLength, withPad: zerocode, startingAt: 0)
+    }    
+    
+    /// Keep coded characters from an input to get it ready for Soundex coding.
     /// - parameters:
-    ///   - input: A string, usually user input.
-    ///   - lastSubcode: The last subcode is examined to prevent coding repetitive groups.
-    ///   - position: The position pointer for examination within the input.
-    /// - returns: (A new code, A new character position)
-    func handleDigraph(input: String,
-                       lastSubcode: Subcode,
-                       position: CharacterPosition) -> (Subcode, CharacterPosition)
+    ///   - input: String for examination.
+    ///   - perform: Array of actions to perform.
+    /// - returns: String with characters kept according to the code actions.
+    func keepCoded(
+        input: String,
+        perform: [CodeReadyAction] = [.keepSingle, .removeDigraph]) -> SoundexCodeReady
+    {
+        guard input.count > 0 else { return SoundexCodeReady(first: nil, nonzeroCoded: nil) }
+        
+        let charAtOffset: (Int) -> Character = { input[input.index(input.startIndex, offsetBy: $0)] }
+        
+        let first = charAtOffset(0)
+        let lastOffset = input.count - 1
+        var offset = 0
+        var newString = ""
+                    
+        while offset <= lastOffset {
+            if perform.contains(.removeDigraph) {
+                offset = digraphRemoveAtPosition(input: input, position: offset)
+            }
+            if perform.contains(.keepSingle) {
+                if let char = keepSingleAtPosition(input: input, position: offset) {
+                    newString += String(char)
+                }
+            } else {
+                newString += String(charAtOffset(offset))
+            }
+            offset += 1
+        }
+        
+        return SoundexCodeReady(first: first, nonzeroCoded: newString)
+    }
+    
+    /// For a given position, if the character is coded then return the character.
+    /// - parameters:
+    ///   - input: String for examination.
+    ///   - position: Position in string to examine.
+    /// - returns: The character to keep or nil.
+    func keepSingleAtPosition(
+        input: String,
+        position: CharacterPosition) -> Character?
+    {
+        let lastOffset = input.count - 1
+        
+        if position <= lastOffset {
+            let char = input[input.index(input.startIndex, offsetBy: position)]
+            if let singleSubcode = getSubcode(char: char) {
+                if singleSubcode != zerocode {
+                    return char
+                }
+            }
+        }
+        
+        return nil
+    }
+    
+    ///  If digraph removal should occur, then return the position that skips the digraph.
+    /// - parameters:
+    ///   - input: String for examination.
+    ///   - position: Position in string to examine.
+    /// - returns: The same character position or a new one if a digraph is removed.
+    func digraphRemoveAtPosition(
+        input: String,
+        position: CharacterPosition) -> CharacterPosition
     {
         let digraphLength = 2
-        var newSubcode = lastSubcode
         var newOffset = position
         let charAtOffset: (Int) -> Character = { input[input.index(input.startIndex, offsetBy: $0)] }
         
@@ -162,30 +224,15 @@ extension Soundexable
             let digraph = String(first) + String(second)
             let digraphRemove = digraphRemoves[digraph]
             switch getDigraphResponse(chars: digraph) {
-            case .keepFirst:
-                if let singleCode = getSubcode(char: first) {
-                    if lastSubcode != singleCode {
-                        newSubcode = singleCode
-                    }
-                    newOffset = position + digraphLength
-                }
-            case .keepSecond:
-                if let singleCode = getSubcode(char: second) {
-                    if lastSubcode != singleCode {
-                        newSubcode = singleCode
-                    }
-                    newOffset = position + digraphLength
-                }
             case .remove:
                 if !(position == 0 && (digraphRemove == .keepInitial)) {
-                    newSubcode = removeCode
                     newOffset = position + digraphLength
                 }
-            case .none:
+            default:
                 break
             }
         }
         
-        return (newSubcode, newOffset)
+        return newOffset
     }
 }

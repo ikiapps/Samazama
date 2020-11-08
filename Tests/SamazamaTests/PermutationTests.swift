@@ -36,11 +36,13 @@ struct VariantSource
 
 private
 var testSources = [
+    VariantSource(source: "Fault", variantCount: 1, uniqueCount: 1),
     VariantSource(source: "astonishment", variantCount: 157, uniqueCount: 26),
     VariantSource(source: "carry pizza over", variantCount: 119, uniqueCount: 10),
-    VariantSource(source: "paragraph", variantCount: 25, uniqueCount: 9),
     VariantSource(source: "dining hall", variantCount: 25, uniqueCount: 4),
     VariantSource(source: "dnghl", variantCount: 1, uniqueCount: 1),
+    VariantSource(source: "paragraph", variantCount: 25, uniqueCount: 9),
+    VariantSource(source: "unintentionally", variantCount: 6409, uniqueCount: 42),
 ]
 
 final
@@ -82,8 +84,9 @@ class SamazamaTests: XCTestCase
     ///   - source: A string.
     ///   - completion: Result of permutations and unique permutations.
     private
-    func asyncVariants(source: String,
-                       completion: @escaping (Result<(Permutations, Set<Permutation>), Error>) -> Void)
+    func asyncVariants(
+        source: String,
+        completion: @escaping (Result<(Permutations, Set<Permutation>), Error>) -> Void)
     {
         smzm.generateVariants(input: source, onlyUnique: false) { result in
             if self.smzm == nil {
@@ -98,9 +101,7 @@ class SamazamaTests: XCTestCase
         }
     }
     
-    // ------------------------------------------------------------
     // MARK: - Tests -
-    // ------------------------------------------------------------
     
     func test_variant_sources() throws
     {
@@ -109,7 +110,7 @@ class SamazamaTests: XCTestCase
             let vars = try variants(source: src.source)
             print("🧮 total_cnt = \(vars.0.count), unique_cnt = \(vars.1.count), sorted = \(vars.1.sorted())")
             XCTAssert(vars.0.count == src.variantCount, "❌ Wrong number of total variants at \(vars.0.count) for \(src).")
-            XCTAssert(vars.1.count == src.uniqueCount, "❌ Wrong number of unique variants at at \(vars.1.count) for \(src).")
+            XCTAssert(vars.1.count == src.uniqueCount, "❌ Wrong number of unique variants at \(vars.1.count) for \(src).")
         }
     }
     
@@ -167,7 +168,7 @@ class SamazamaTests: XCTestCase
         XCTAssert(uniqueCharacters.count == 2, "❌ Wrong number of unique characters.")
         do {
             _ = try smzm.repeatCharacterVariants(input: source)
-        } catch let err { XCTAssert(err as? SamazamaError == SamazamaError.exceededRecursionLevel, "❌ Wrong error.") }
+        } catch let err { XCTAssert(err as? SamazamaError == SamazamaError.exceededRecursionLevel, "❌ Wrong error of \(err).") }
     }
     
     /// Variant generation should complete even if Samazama is set nil.

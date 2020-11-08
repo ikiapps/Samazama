@@ -31,7 +31,6 @@ public
 class Samazama:
     Permutable,
     Soundexable,
-    Tokenizable,
     TextProcessable
 {
     var generate: ((String, Bool) throws -> Permutations)!
@@ -64,8 +63,9 @@ class Samazama:
     }
     
     public
-    func repeatCharacterVariants(input: String,
-                                 onlyUnique: Bool = true) throws -> Permutations
+    func repeatCharacterVariants(
+        input: String,
+        onlyUnique: Bool = true) throws -> Permutations
     {
         var newInput: String!
         
@@ -91,9 +91,10 @@ class Samazama:
     ///   - onlyUnique: If true, return unique variants only.
     ///   - completion: Result of permutations or an error.
     public
-    func generateVariants(input: String,
-                          onlyUnique: Bool,
-                          completion: @escaping (Result<Permutations, Error>) -> Void)
+    func generateVariants(
+        input: String,
+        onlyUnique: Bool,
+        completion: @escaping (Result<Permutations, Error>) -> Void)
     {
         DispatchQueue.global(qos: qos).async { [weak self] in
             var variants: Permutations? = [Permutation]()

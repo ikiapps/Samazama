@@ -18,19 +18,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-enum DigraphRemove
+/// For preparation of Soundex codes.
+public
+struct SoundexCodeReady
 {
-    case keepInitial
+    /// Keep the first character to start a Soundex code.
+    var first: Character?
+    /// Contains only characters convertible to non-zero Soundex groups.
+    var nonzeroCoded: String?
 }
 
-let digraphRemoves: [String: DigraphRemove] = [
-    "gh": .keepInitial
-]
-
-enum DigraphResponse
+/// Possible actions on units within a string for coding.
+enum CodeReadyAction
 {
-    case remove
-    case keepFirst
-    case keepSecond
-    case none
+    case keepSingle
+    case removeDigraph
 }

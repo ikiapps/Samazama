@@ -20,55 +20,17 @@
 
 public
 protocol TextProcessable:
-    Soundexable,
-    Tokenizable
+    Soundexable
 {
     // Intentionally empty.
-}
-
-extension String: TextProcessable
-{
-    /// Upper and lower case variations are included so that capitalization is not affected during transformation.
-    ///
-    /// - returns: String with characters removed corresponding to CharacterRemove cases.
-    public
-    func removeCharacters(removes: [CharacterRemove]) -> String
-    {
-        let vowels = ["a", "e", "i", "o", "u",
-                      "A", "E", "I", "O", "U"]
-        let noncoded = ["a", "e", "i", "o", "u", "h", "w", "y",
-                        "A", "E", "I", "O", "U", "H", "W", "Y"]
-        let spaces = [" "]
-        // Transformed result is mutated in place.
-        var transformed = self
-        
-        for rmv in removes {
-            switch rmv {
-            case .spaces:
-                if #available(iOS 12.0, macOS 14.0, *) {
-                    transformed = tokenized(input: transformed)
-                } else if #available(iOS 11.0, macOS 13.0, *) {
-                    transformed = spacesRemoved(input: transformed)
-                    transformed = punctuationRemoved(input: transformed)
-                } else {
-                    transformed = transformed.filter { !spaces.contains(String($0)) }
-                }
-            case .noncoded:
-                transformed = transformed.filter { !noncoded.contains(String($0)) }
-            case .vowels:
-                transformed = transformed.filter { !vowels.contains(String($0)) }
-            } // End switch
-        }
-        
-        return transformed
-    }
 }
 
 extension TextProcessable
 {
     /// Remove a character at a given offset.
-    func characterRemove(input: String,
-                         atOffset: Int) -> String
+    func characterRemove(
+        input: String,
+        atOffset: Int) -> String
     {
         var offSet = 0
         var result = ""
@@ -124,8 +86,9 @@ extension TextProcessable
     ///   - removeAtMost: For all repeating characters, if set, will remove the specified number of
     ///                   occurrences for each character.
     /// - returns: String with repeating characters removed.
-    func removeRepeats(input: String,
-                       removeAtMost: Int? = nil) -> String
+    func removeRepeats(
+        input: String,
+        removeAtMost: Int? = nil) -> String
     {
         var mutable = input
         let repeated = uniqueCharacters(input: input)
@@ -179,50 +142,26 @@ extension TextProcessable
         return permutations
     }
     
-    /// Uses functionality in Soundexable.
-    /// Given a word, remove non-initial 'gh' digraphs.
-    ///
-    /// - parameter input: A string, usually user input.
-    /// - returns: String with removed digraphs.
-    func removeDigraphs(input: String) -> String
-    {
-        var pos = 0
-        var newText = ""
-        
-        while pos <= input.count - 1 {
-            let (subcode, newPosition) = handleDigraph(input: input, lastSubcode: "0", position: pos)
-            
-            if subcode == removeCode {
-                pos = newPosition
-            } else {
-                newText += String(input[input.index(input.startIndex, offsetBy: pos)])
-                pos += 1
-            }
-        }
-        
-        return newText
-    }
-    
     /// Intended to run before permutation generation.
     ///
+    /// * Changes case.
     /// * Removes silent digraphs.
     /// * Removes spaces and noncoded characters.
-    /// * Changes case.
-    ///
-    /// These operations are order-dependent.
     ///
     /// - parameter input: A string, usually user input.
-    /// - returns: The normalized string
+    /// - returns: The normalized string or the original input, lowercased, if parsing fails.
     func normalizeInput(input: String) -> String
     {
         var newInput = input
-        newInput = self.removeDigraphs(input: newInput)
-        // Order of spaces and then noncoded is due to the tokenizer's failure to handle shorthand forms in some rare instances.
-        newInput = newInput.removeCharacters(removes: [.spaces, .noncoded])
+        
         if shouldChangeToLowercase {
             newInput = newInput.lowercased()
-        }
+        }        
         
+        if let coded = keepCoded(input: newInput).nonzeroCoded {
+            return coded
+        }
+                
         return newInput
     }
 }

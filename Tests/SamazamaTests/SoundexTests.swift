@@ -40,12 +40,13 @@ var testWordCodes = [
     WordSource(word: "blackjack", code: "b420"),
     WordSource(word: "mountain", code: "m350"),
     WordSource(word: "night", code: "n300"),
-    WordSource(word: "to be enough", code: "t150")
+    WordSource(word: "to be enough", code: "t150"),
 ]
 
 var digraphCompare = [
+    CompareSource(word1: "dining hall", word2: "dnngll"),
     CompareSource(word1: "night", word2: "nt"),
-    CompareSource(word1: "neighborhood", word2: "nbrd")
+    CompareSource(word1: "neighborhood", word2: "nbrd"),
 ]
 
 final
@@ -57,7 +58,7 @@ class SoundexTests: XCTestCase
     static var allTests = [
         ("test_empty", test_empty),
         ("test_soundex_coding", test_soundex_coding),
-        ("test_handle_digraph", test_handle_digraph),
+        ("test_digraph_removes", test_digraph_removes),
     ]
     
     override
@@ -74,32 +75,17 @@ class SoundexTests: XCTestCase
     func test_soundex_coding()
     {
         for src in testWordCodes {
-            let code = smzm.encodeString(input: src.word)
+            let readyToCode = smzm.keepCoded(input: src.word)
+            let code = smzm.soundexCode(source: readyToCode)
             XCTAssert(code == src.code, "❌ Bad code of \(code) for \"\(src.word)\", expected \(src.code).")
         }
     }
     
-    /// Test iterative handling of digraphs.
-    /// Noncoded characters removed.
-    func test_handle_digraph()
+    func test_digraph_removes()
     {
         for source in digraphCompare {
-            var processed: String = ""
-            var pos = 0
-            while pos <= source.word1.count - 1 {
-                let (subcode, newPosition)
-                    = smzm.handleDigraph(input: source.word1,
-                                         lastSubcode: "0",
-                                         position: pos)
-                if subcode == removeCode {
-                    pos = newPosition
-                } else {
-                    processed += String(source.word1[source.word1.index(source.word1.startIndex, offsetBy: pos)])
-                    pos += 1
-                }
-            }
-            processed = processed.removeCharacters(removes: [.noncoded])
-            XCTAssert(processed == source.word2, "❌ Bad digraph handling for \(processed)")
+            let kept = smzm.keepCoded(input: source.word1)
+            XCTAssert(kept.nonzeroCoded == source.word2, "❌ Bad digraph handling for \(kept.nonzeroCoded as String?)")
         }
     }
 }

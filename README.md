@@ -5,22 +5,22 @@ A small package in Swift to assist with minimizing words and phrases using the f
 - Soundex coding - Group together similar sounds in English
 - Permutation generation - Reorder terms while minimizing repeating characters
 
-It can dramatically save user's keystrokes by allowing shorthand input for comparison against full-length words and phrases.
+It can dramatically save user's keystrokes by allowing shorthand input for comparison against full-length words and phrases. At the same time, it does not interfere with full-length matching under most conditions.
 
 ##  Features
 
-- Remove noncoded characters from input, including vowels, 'h', 'w', 'y', spaces, and punctuation.
-  - In brief, the first letter is kept and similar sounding letters are grouped together forming a code such as 'A235' for 'astounding'.
+- Keep only Soundex coded characters from an input; excluded are vowels, 'h,' 'w,' 'y,' spaces, and punctuation.
+  - In brief, the first letter is kept, and similar-sounding ones get grouped, forming a code such as 'A235' for 'astounding.'
   - This method is based on a well-known algorithm for coding English sounds. It reduces repeating characters but does not handle changes in order. The permutation method supplies that ability.
 - Generate permutations where repeating characters only appear once to allow matching various orderings.
-  - For example, 'stnm' or 'tnsm' or 'nsmt' all match 'astonishment'.
+  - For example, 'stnm' or 'tnsm' or 'nsmt' all match 'astonishment.'
   - Supports main thread or background queue operation.
   - Prevents excessive levels of recursion.
-    - Operations can exceed 360,000 at a recursion depth of _N_ = 9 where the operation count is approximately _N!._
+    - Operations can exceed 360,000 at a recursion depth of _N_ = 9, where the operation count is approximately _N!._
 
 ## Applications
 
-My jumping into learning Japanese inspired this project. Little did I know how many reviews of kanji and vocabulary it takes to gain an entry point into the language. Thousands later, I am doing everything possible to optimize my study because progress is otherwise dampened.
+My jumping into learning Japanese inspired this project. Little did I know how many reviews of kanji and vocabulary it takes to gain an entry point into the language. Thousands later, I am doing everything possible to optimize my study because progress dampens otherwise.
 
 Using shorthand in quizzes where English is needed substantially reduces individual keystrokes and time to enter them. Immediately, dropping all vowels plus 'h,' 'w,' and 'y' is a 30% savings over the alphabet. Further removal of repeating characters and spaces yields additional efficiency.
 
@@ -34,8 +34,8 @@ During input, silent 'gh' digraphs can feel cumbersome. Therefore, Samazama remo
 
 ### Future directions
 
-- Functionality is primarily oriented around my use of language learning but expanding this project is not out of the question. Pull requests are welcome.
-- Reducing the possibility of overlap in coded forms.
+- Functionality primarily centers around my language learning, but expanding this project is not out of the question. Pull requests are welcome.
+- Reducing overlap in coded forms.
   - For example, "Lack" and "Luck" have the same code of "L200." Future versions may differentiate such terms.
 
 ## Usage
@@ -71,13 +71,13 @@ The following function checks user input against a set of answers.
 
 The Soundex algorithm contains the following additions:
 
-- Remove non-initial 'gh' as they are often silent.
+- Remove non-initial 'gh' occurrences as they are often silent.
 
 There are probably more exceptions to handle.
 
 ## More on permutations
 
-Given the source phrase "carry pizza over," generate all of the minimal forms in the following set:
+Given the source phrase "carry pizza over," generate all of the minimal forms as shown in the following set:
 
 ```
 { 
